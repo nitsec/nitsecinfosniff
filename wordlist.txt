@@ -6,3 +6,10 @@ backup
 debug
 sitemap.xml
 robots.txt
+backup.zip
+db_backup.sql
+credentials.txt
+config.yaml
+.env.local
+.git/config
+admin.php
