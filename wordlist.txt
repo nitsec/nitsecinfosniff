@@ -1,0 +1,8 @@
+.env
+.git
+config
+admin
+backup
+debug
+sitemap.xml
+robots.txt
