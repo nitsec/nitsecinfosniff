@@ -1,8 +1,15 @@
-apikey
-authorization
-jwt
 password
-stack trace
+passwd
 token
-debug
-exception
+secret
+apikey
+api_key
+authorization
+credentials
+config
+backup
+private
+secret_key
+jwt
+cookie
+sessionid
