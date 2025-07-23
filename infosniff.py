@@ -1,8 +1,8 @@
 import requests
 from bs4 import BeautifulSoup
-import re
 import tldextract
-from urllib.parse import urljoin, urlparse
+from urllib.parse import urljoin
+import re
 
 visited = set()
 found_sensitive = []
@@ -11,7 +11,7 @@ def load_file(file_path):
     with open(file_path, "r") as f:
         return [line.strip() for line in f if line.strip()]
 
-def get_links(url):
+def get_all_links(url):
     try:
         resp = requests.get(url, timeout=5)
         soup = BeautifulSoup(resp.text, "html.parser")
@@ -29,6 +29,14 @@ def is_same_domain(base, target):
     target_host = tldextract.extract(target).registered_domain
     return base_host == target_host
 
+def filter_links_by_extension(links, exts):
+    filtered = set()
+    for link in links:
+        for ext in exts:
+            if link.lower().endswith(ext):
+                filtered.add(link)
+    return filtered
+
 def scan_url(url, patterns):
     try:
         resp = requests.get(url, timeout=5)
@@ -41,29 +49,27 @@ def scan_url(url, patterns):
         pass
 
 def crawl_and_fuzz(base_url, wordlist, sensitive_words):
-    queue = set([base_url])
-    while queue:
-        current_url = queue.pop()
-        if current_url in visited:
-            continue
-        visited.add(current_url)
-
-        print(f"[+] Crawling: {current_url}")
-        scan_url(current_url, sensitive_words)
-
-        links = get_links(current_url)
-        queue.update(links)
-
-    print("\n[+] Starting Fuzzing...")
-    for path in wordlist:
-        test_url = urljoin(base_url + "/", path)
-        scan_url(test_url, sensitive_words)
-
-    print("\n[✓] Scan complete.")
+    print(f"[+] Crawling base URL: {base_url}")
+    all_links = get_all_links(base_url)
+    
+    exts_to_find = ['.txt', '.js', '.zip', '.php']
+    filtered_links = filter_links_by_extension(all_links, exts_to_find)
+    
+    if filtered_links:
+        print(f"[+] Found {len(filtered_links)} links with target extensions. Scanning them...")
+        for url in filtered_links:
+            scan_url(url, sensitive_words)
+    else:
+        print("[+] No target extension links found. Starting fuzzing...")
+        for path in wordlist:
+            fuzz_url = urljoin(base_url + "/", path)
+            scan_url(fuzz_url, sensitive_words)
+    
+    print("[✓] Scan complete.")
     if found_sensitive:
-        print("\n[!] Sensitive URLs:")
+        print("\n[!] Sensitive URLs found:")
         for url, keyword in found_sensitive:
-            print(f"- {url}   | keyword: {keyword}")
+            print(f"- {url}  | keyword: {keyword}")
     else:
         print("[+] No sensitive content found.")
 
@@ -72,3 +78,4 @@ if __name__ == "__main__":
     wordlist = load_file("wordlist.txt")
     sensitive_words = load_file("sensitive_words.txt")
     crawl_and_fuzz(target, wordlist, sensitive_words)
+
