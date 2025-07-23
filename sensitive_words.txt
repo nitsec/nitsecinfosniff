@@ -1,0 +1,8 @@
+apikey
+authorization
+jwt
+password
+stack trace
+token
+debug
+exception
